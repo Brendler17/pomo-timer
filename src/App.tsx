@@ -7,5 +7,5 @@ export function App() {
     <ThemeProvider theme={defaultTheme}>
       <GlobalStyle />
     </ThemeProvider>
-  )
+  );
 }
