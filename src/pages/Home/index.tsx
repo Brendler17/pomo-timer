@@ -20,7 +20,7 @@ export function Home() {
             <OcupationInput
               id="ocupation"
               type="text"
-              placeholder="estudar/trabalhar"
+              placeholder="tarefa"
               list="ocupation-suggestions"
             />
             <datalist id="ocupation-suggestions">

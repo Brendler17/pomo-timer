@@ -52,7 +52,7 @@ const BaseInput = styled.input`
 `;
 
 export const OcupationInput = styled(BaseInput)`
-  width: 10rem;
+  width: 6rem;
   
   &::-webkit-calendar-picker-indicator {
     display: none !important;
