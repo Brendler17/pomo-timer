@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as zod from 'zod';
 import { Play } from 'phosphor-react';
+import { useState } from 'react';
 import {
   StartCountdownButton,
   CountdownContainer,
@@ -28,7 +29,17 @@ const newCycleValidationSchema = zod.object({
 
 type NewCycleFormData = zod.infer<typeof newCycleValidationSchema>;
 
+interface Cycle {
+  id: string;
+  ocupation: string;
+  task: string;
+  minutesAmount: number;
+}
+
 export function Home() {
+  const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -44,9 +55,23 @@ export function Home() {
   });
 
   function handleCreateNewCycle(data: NewCycleFormData) {
-    console.log(data);
+    const id = String(new Date().getTime());
+
+    const newCycle: Cycle = {
+      id,
+      ocupation: data.ocupation,
+      task: data.task,
+      minutesAmount: data.minutesAmount,
+    };
+
+    setCycles((state) => [...state, newCycle]);
+    setActiveCycleId(id);
+
     reset();
   }
+
+  const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId);
+  console.log(activeCycle);
 
   const hasOcupation = watch('ocupation');
   const hasTask = watch('task');
