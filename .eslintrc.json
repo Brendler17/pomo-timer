@@ -13,6 +13,7 @@
     "import/prefer-default-export": "off",
     "react/react-in-jsx-scope": "off",
     "react/jsx-uses-react": "off",
+    "react/jsx-no-bind": "off",
     "@typescript-eslint/no-empty-interface": [
       "error",
       {
