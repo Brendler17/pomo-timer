@@ -49,6 +49,10 @@ const BaseInput = styled.input`
     box-shadow: none;
     border-color: ${(props) => props.theme['orange-900']};
   }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
 `;
 
 export const OcupationInput = styled(BaseInput)`
@@ -95,7 +99,7 @@ export const Separator = styled.div`
   justify-content: center;
 `;
 
-export const StartCountdownButton = styled.button`
+const BaseCountdownButton = styled.button`
   width: 100%;
   border: 0;
   padding: 1rem;
@@ -106,17 +110,30 @@ export const StartCountdownButton = styled.button`
   gap: 0.5rem;
   font-weight: bold;
   cursor: pointer;
-  background: ${(props) => props.theme['orange-900']};
   color: ${(props) => props.theme['gray-100']};
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+`;
+
+export const StartCountdownButton = styled(BaseCountdownButton)`
+  background: ${(props) => props.theme['orange-900']};
 
   transition: filter 0.2s;
 
   &:not(:disabled):hover{
     filter: brightness(1.25);
   }
+`;
 
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
+export const StopCountdownButton = styled(BaseCountdownButton)`
+  background: ${(props) => props.theme['red-500']};
+
+  transition: background-color 0.2s;
+
+  &:not(:disabled):hover{
+    background: ${(props) => props.theme['red-700']};
   }
 `;
