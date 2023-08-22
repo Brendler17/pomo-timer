@@ -99,6 +99,10 @@ export const Separator = styled.div`
   justify-content: center;
 `;
 
+export const SeparatorRed = styled(Separator)`
+  color: ${(props) => props.theme['red-500']};
+`;
+
 const BaseCountdownButton = styled.button`
   width: 100%;
   border: 0;
