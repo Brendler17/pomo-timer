@@ -14,6 +14,7 @@ import {
   OcupationInput,
   StartCountdownButton,
   StopCountdownButton,
+  SeparatorRed,
 } from './styles';
 
 const newCycleValidationSchema = zod.object({
@@ -25,7 +26,7 @@ const newCycleValidationSchema = zod.object({
     .min(1, 'Informe uma tarefa'),
   minutesAmount: zod
     .number()
-    .min(5, 'O intervalo precisa ser de no mínimo 5 minutos')
+    .min(1, 'O intervalo precisa ser de no mínimo 5 minutos')
     .max(60, 'O intervalo precisa ser de no máximo 60 minutos'),
 });
 
@@ -38,6 +39,7 @@ interface Cycle {
   minutesAmount: number;
   startDate: Date;
   interruptDate?: Date;
+  finishedDate?: Date;
 }
 
 export function Home() {
@@ -78,38 +80,53 @@ export function Home() {
   }
 
   function handleInterruptCycle() {
-    setCycles(
-      cycles.map((cycle) => {
-        if (cycle.id === activeCycleId) {
-          return { ...cycle, interrupDate: new Date() };
-        }
-        return cycle;
-      }),
-    );
+    setCycles((state) => state.map((cycle) => {
+      if (cycle.id === activeCycleId) {
+        return { ...cycle, interrupDate: new Date() };
+      }
+      return cycle;
+    }));
     setActiveCycleId(null);
   }
 
   const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId);
+  const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0;
 
   useEffect(() => {
     let interval: number;
 
     if (activeCycle) {
       interval = setInterval(() => {
-        setAmountSecondsPassed(differenceInSeconds(new Date(), activeCycle.startDate));
+        const secondsDifference = differenceInSeconds(
+          new Date(),
+          activeCycle.startDate,
+        );
+
+        if (secondsDifference >= totalSeconds) {
+          setCycles((state) => state.map((cycle) => {
+            if (cycle.id === activeCycleId) {
+              return { ...cycle, finishedDate: new Date() };
+            }
+            return cycle;
+          }));
+
+          setAmountSecondsPassed(totalSeconds);
+          clearInterval(interval);
+        } else {
+          setAmountSecondsPassed(secondsDifference);
+        }
       }, 1000);
     }
 
     return () => {
       clearInterval(interval);
     };
-  }, [activeCycle]);
+  }, [activeCycle, totalSeconds, activeCycleId]);
 
   const hasOcupation = watch('ocupation');
   const hasTask = watch('task');
   const isSubmitDisabled = !hasOcupation || !hasTask;
 
-  const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0;
   const currentSeconds = activeCycle ? totalSeconds - amountSecondsPassed : 0;
   const minutesAmount = Math.floor(currentSeconds / 60);
   const secondsAmount = currentSeconds % 60;
@@ -163,7 +180,7 @@ export function Home() {
               type="number"
               placeholder="00"
               step={5}
-              min={5}
+              min={1}
               max={60}
               disabled={!!activeCycle}
               {...register('minutesAmount', { valueAsNumber: true })}
@@ -176,7 +193,13 @@ export function Home() {
         <CountdownContainer>
           <span>{minutes[0]}</span>
           <span>{minutes[1]}</span>
-          <Separator>:</Separator>
+          {
+            activeCycle ? (
+              <SeparatorRed>:</SeparatorRed>
+            ) : (
+              <Separator>:</Separator>
+            )
+          }
           <span>{seconds[0]}</span>
           <span>{seconds[1]}</span>
         </CountdownContainer>
