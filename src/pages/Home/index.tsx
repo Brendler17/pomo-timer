@@ -118,8 +118,9 @@ export function Home() {
           activeCycleId,
           amountSecondsPassed,
           markCurrentCycleAsFinished,
-          setSecondsPassed
-        }}>
+          setSecondsPassed,
+        }}
+        >
           <FormProvider {...newCycleForm}>
             <NewCycleForm />
           </FormProvider>
