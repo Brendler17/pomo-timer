@@ -1,21 +1,33 @@
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { differenceInSeconds } from 'date-fns';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as zod from 'zod';
+import { useState, createContext } from 'react';
+import { FormProvider, useForm } from 'react-hook-form';
 import { HandPalm, Play } from 'phosphor-react';
+import * as zod from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { NewCycleForm } from './components/NewCycleForm';
+import { Countdown } from './components/Countdown';
 import {
-  CountdownContainer,
-  FormContainer,
   HomeContainer,
-  Separator,
-  TaskInput,
-  MinutesAmountInput,
-  OcupationInput,
   StartCountdownButton,
   StopCountdownButton,
-  SeparatorRed,
 } from './styles';
+
+interface Cycle {
+  id: string;
+  ocupation: string;
+  task: string;
+  minutesAmount: number;
+  startDate: Date;
+  interruptDate?: Date;
+  finishedDate?: Date;
+}
+
+interface CyclesContextType {
+  activeCycle: Cycle | undefined;
+  activeCycleId: string | undefined;
+  amountSecondsPassed: number;
+  markCurrentCycleAsFinished: () => void;
+  setSecondsPassed(seconds: number): void;
+}
 
 const newCycleValidationSchema = zod.object({
   ocupation: zod
@@ -32,27 +44,14 @@ const newCycleValidationSchema = zod.object({
 
 type NewCycleFormData = zod.infer<typeof newCycleValidationSchema>;
 
-interface Cycle {
-  id: string;
-  ocupation: string;
-  task: string;
-  minutesAmount: number;
-  startDate: Date;
-  interruptDate?: Date;
-  finishedDate?: Date;
-}
+export const CyclesContext = createContext({} as CyclesContextType);
 
 export function Home() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
+  const [activeCycleId, setActiveCycleId] = useState<string | undefined>(undefined);
   const [amountSecondsPassed, setAmountSecondsPassed] = useState(0);
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    reset,
-  } = useForm<NewCycleFormData>({
+  const newCycleForm = useForm<NewCycleFormData>({
     resolver: zodResolver(newCycleValidationSchema),
     defaultValues: {
       ocupation: '',
@@ -60,6 +59,8 @@ export function Home() {
       minutesAmount: 5,
     },
   });
+
+  const { handleSubmit, watch, reset } = newCycleForm;
 
   function handleCreateNewCycle(data: NewCycleFormData) {
     const id = String(new Date().getTime());
@@ -86,123 +87,44 @@ export function Home() {
       }
       return cycle;
     }));
-    setActiveCycleId(null);
+    setActiveCycleId(undefined);
+  }
+
+  function markCurrentCycleAsFinished() {
+    setCycles((state) => state.map((cycle) => {
+      if (cycle.id === activeCycleId) {
+        return { ...cycle, finishedDate: new Date() };
+      }
+      return cycle;
+    }));
+  }
+
+  function setSecondsPassed(seconds: number) {
+    setAmountSecondsPassed(seconds);
   }
 
   const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId);
-  const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0;
-
-  useEffect(() => {
-    let interval: number;
-
-    if (activeCycle) {
-      interval = setInterval(() => {
-        const secondsDifference = differenceInSeconds(
-          new Date(),
-          activeCycle.startDate,
-        );
-
-        if (secondsDifference >= totalSeconds) {
-          setCycles((state) => state.map((cycle) => {
-            if (cycle.id === activeCycleId) {
-              return { ...cycle, finishedDate: new Date() };
-            }
-            return cycle;
-          }));
-
-          setAmountSecondsPassed(totalSeconds);
-          clearInterval(interval);
-        } else {
-          setAmountSecondsPassed(secondsDifference);
-        }
-      }, 1000);
-    }
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [activeCycle, totalSeconds, activeCycleId]);
 
   const hasOcupation = watch('ocupation');
   const hasTask = watch('task');
   const isSubmitDisabled = !hasOcupation || !hasTask;
 
-  const currentSeconds = activeCycle ? totalSeconds - amountSecondsPassed : 0;
-  const minutesAmount = Math.floor(currentSeconds / 60);
-  const secondsAmount = currentSeconds % 60;
-  const minutes = String(minutesAmount).padStart(2, '0');
-  const seconds = String(secondsAmount).padStart(2, '0');
-
-  useEffect(() => {
-    if (activeCycle) {
-      document.title = `${minutes}:${seconds} | PomoTimer`;
-    }
-  }, [minutes, seconds, activeCycle]);
-
   return (
     <HomeContainer>
       <form onSubmit={handleSubmit(handleCreateNewCycle)} action="submit">
-        <FormContainer>
-          <label htmlFor="ocupation">
-            Vou
-            <OcupationInput
-              id="ocupation"
-              type="text"
-              placeholder="tarefa"
-              list="ocupation-suggestions"
-              disabled={!!activeCycle}
-              {...register('ocupation')}
-            />
-            <datalist id="ocupation-suggestions">
-              <option value="estudar">Estudar</option>
-              <option value="trabalhar">Trabalhar</option>
-            </datalist>
-          </label>
-          <label htmlFor="task">
-            em
-            <TaskInput
-              id="task"
-              type="text"
-              placeholder="dê um nome para sua tarefa"
-              list="task-suggestions"
-              disabled={!!activeCycle}
-              {...register('task')}
-            />
-            <datalist id="task-suggestions">
-              <option value="projeto 1">Projeto 1</option>
-            </datalist>
-          </label>
 
-          <label htmlFor="minutesAmount">
-            durante
-            <MinutesAmountInput
-              id="minutesAmount"
-              type="number"
-              placeholder="00"
-              step={5}
-              min={1}
-              max={60}
-              disabled={!!activeCycle}
-              {...register('minutesAmount', { valueAsNumber: true })}
-            />
-          </label>
-
-          <span>minutos.</span>
-        </FormContainer>
-
-        <CountdownContainer>
-          <span>{minutes[0]}</span>
-          <span>{minutes[1]}</span>
-          {
-            activeCycle ? (
-              <SeparatorRed>:</SeparatorRed>
-            ) : (
-              <Separator>:</Separator>
-            )
-          }
-          <span>{seconds[0]}</span>
-          <span>{seconds[1]}</span>
-        </CountdownContainer>
+        <CyclesContext.Provider value={{
+          activeCycle,
+          activeCycleId,
+          amountSecondsPassed,
+          markCurrentCycleAsFinished,
+          setSecondsPassed
+        }}>
+          <FormProvider {...newCycleForm}>
+            <NewCycleForm />
+          </FormProvider>
+          <Countdown />
+        </CyclesContext.Provider>
 
         {
           activeCycle ? (
