@@ -14,7 +14,7 @@ interface CreateCycleData {
 
 interface CyclesContextType {
   cycles: Cycle[];
-  activeCycle: Cycle | null;
+  activeCycle: Cycle | undefined;
   activeCycleId: string | null;
   amountSecondsPassed: number;
   markCurrentCycleAsFinished: () => void;
